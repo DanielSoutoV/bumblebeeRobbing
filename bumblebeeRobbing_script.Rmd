@@ -11,31 +11,14 @@ Y-Tube assays carried out by Oriana Gutierrez in 2024.
 
 Methods:
 
-Study sites:
-
-Samples of Corydalis caseana were collected at Washington Gulch campsite (coords:) and behavioral assays carried out between the X and X of July 2024. Mertensia ciliata was sampled at Schoffield Pass (coords:) between X and X of August 2024. For both wildflower species, budding individuals were covered with fine mesh bags to prevent flower visitors for at least 24 hours before manipulation. On the day of the experiments, multiple stalks were cut, kept in waterpics and trimmed to a total of 10 or 5 flowers (for Corydalis and Mertensia respectively) per stalk.
-
-Plant treatments:
-
-Initially, we randomly selected six stalks and treated all flowers with either sterile or yeast inoculated nectar analogue. For this, we firstly used glass microcapillary tubes to remove as much nectar as possible from each flower, before using cotton wool to 'plug' the corolla to avoid legitimate visitation. Using a Hamilton syringe we created an artificial robbing wound and added 5ul of control or mreu nectar to all flowers according to the treatment. Remaining stalks were kept as a replacement for any stalk visited by bumblebees during our behavioral assays. 
-
-Treated stalks were randomly placed in waterpics within a plastic rubbermaid container with all side panels cut out and replaced with fine mesh for breathability.
-
-Bumblebee captures and behavioral assays:
-
-Using a net, individual bumblebees were captured at each site between 8:00 and 10:00 am and kept in individual vials inside a portable cooler kept in the shade. The cooler contained ice packs to avoid the bumblebees overheating, but care was taken to avoid temperature low enough to send them to sleep. 
-
-For Corydalis, Bombus flavifrons and B. bifarius were caught visiting Corydalis flowers. Whether or not they were robbing or legitimately visiting was challenging to see given floral morphology so they were caught regardless.
-
-For Mertensia, only B. flaviforns were caught, making sure they were legitimate visitors before capturing (following the bee for at least 5 flowers where she legitimately visited).
-
-Once the array was set up with the treated stalks randomly asigned to a waterpic within the observation box, a single bumblebee was introduced to the array and allowed her 10 minutes to make a choice. Using a voice recorder we noted the plant stalk visited (1-6) and noting when the bumblebee would find the artificial robbing hole (saying 'in' on the recorder), noting when the bumblebee stopped feeding (saying 'out') and recording her next flower visit on the same or different stalk. This strategy allowed us to record the time it took an individual to find a robbing hole, and how long it spent feeding on that individual flower. This information was recorded for every visit within the array, and the 'feeding bout' was considered done when the bee flew to the sides of the box and appeared uninterested on returning to the flower stalks. The bumblebee was removed from the box and marked with POSCA Bee marking pens to avoid future recaptures (we found several marked bumblebees in subsequent days suggesting that our handling and treatment was not too traumatic).
+Refer to Souto-Vilarós et al. 'Yeast volatiles promote larceny in bumble bee behavior.'
 
 Data analysis:
 
-The datasts are arranged as date, plant species, bee individual, bee species, whether or not a choice was made, stalk number, treatment, whether or not the bee tried to legitimately visit the flower, whether it robbed the flower, time to rob, time feeding, flower number (total for that bout) and additional notes. 
+The dataset is arranged as date, plant species, bee individual, bee species, whether or not a choice was made, stalk number, treatment, whether or not the bee tried to legitimately visit the flower, whether it robbed the flower, time to rob, time feeding, flower number (total for that bout) and additional notes. 
 
 Note that not all packages are used in the current analysis
+
 ```{r setup, include=FALSE, results=FALSE, warning=FALSE, message=TRUE}
 rm(list=ls()) #removes all objects from work space - good practice to start all R sessions with this
 library('ggplot2')
@@ -54,8 +37,7 @@ visitation<-read.csv("data/bumblebee_behavior_data.csv", header = T)
 We need to wrangle the data a bit. Namely:
 Filter the data to include only cases where a flower was robbed (column CHOICE, "Yes"),
 Remove B. mixtus (we never got enough individuals),
-Remove a weird outlier which spent over 3 minutes just hanging out before making a move,
-Make sure all data is numeric and there are no missing data.
+Remove an outlier which was inactive on a flwoer over 3 minutes. Make sure all data is numeric and there are no missing data.
 
 This final data set includes: 57 total successful robber trials (out of 116 bee trials transcribed) 42 Corydalis 2° robbers (22 bifarius, 16 flavifrons, 4 mixtus) and 15 Mertensia 2° robbers (all flavifrons)
 
