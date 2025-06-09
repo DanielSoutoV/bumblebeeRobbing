@@ -2,7 +2,7 @@
 title: "BumblebeeRobbing"
 author: "Daniel"
 date: "2025-06-09"
-output: html_document
+output: pdf_document
 ---
 
 Behavioral assays done on bumblebees at Rocky Mountains Biology Laboratory (RMBL) field season 2023.
