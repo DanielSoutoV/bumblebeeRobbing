@@ -1,0 +1,452 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Bumblebee2},
+  pdfauthor={Daniel},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Bumblebee2}
+\author{Daniel}
+\date{2025-06-09}
+
+\begin{document}
+\maketitle
+
+Behavioral assays done on bumblebees at Rocky Mountains Biology
+Laboratory (RMBL) field season 2023. Observations were carried out by
+Nick Dabagia and Daniel Souto for Corydalis and Mertensia species.
+Y-Tube assays carried out by Oriana Gutierrez in 2024.
+
+Methods:
+
+Refer to Souto-Vilarós et al.~`Yeast volatiles promote larceny in bumble
+bee behavior.'
+
+Data analysis:
+
+The dataset is arranged as date, plant species, bee individual, bee
+species, whether or not a choice was made, stalk number, treatment,
+whether or not the bee tried to legitimately visit the flower, whether
+it robbed the flower, time to rob, time feeding, flower number (total
+for that bout) and additional notes.
+
+Note that not all packages are used in the current analysis
+
+We need to wrangle the data a bit. Namely: Filter the data to include
+only cases where a flower was robbed (column CHOICE, ``Yes''), Remove B.
+mixtus (we never got enough individuals), Remove an outlier which was
+inactive on a flwoer over 3 minutes. Make sure all data is numeric and
+there are no missing data.
+
+This final data set includes: 57 total successful robber trials (out of
+116 bee trials transcribed) 42 Corydalis 2° robbers (22 bifarius, 16
+flavifrons, 4 mixtus) and 15 Mertensia 2° robbers (all flavifrons)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{robbed\_flowers }\OtherTok{\textless{}{-}}\NormalTok{ visitation }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(robbed }\SpecialCharTok{==} \StringTok{"yes"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} \CommentTok{\#note that this will reduce total number of bees which made a choice since not all of them actually \textquotesingle{}robbed\textquotesingle{}}
+  \FunctionTok{filter}\NormalTok{(species }\SpecialCharTok{!=} \StringTok{"mixtus"}\NormalTok{)}\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(timetorob }\SpecialCharTok{!=}\FloatTok{154.7}\NormalTok{) }
+
+\NormalTok{robbed\_flowers }\OtherTok{\textless{}{-}}\NormalTok{ robbed\_flowers }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{timetorob =} \FunctionTok{as.numeric}\NormalTok{(timetorob),}
+    \AttributeTok{timefeeding =} \FunctionTok{as.numeric}\NormalTok{(timefeeding)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(timetorob) }\SpecialCharTok{\&} \SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(timefeeding))}
+
+\NormalTok{robbed\_flowers }\OtherTok{\textless{}{-}}\NormalTok{ robbed\_flowers }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{trytolegit\_binary =} \FunctionTok{ifelse}\NormalTok{(trytolegit }\SpecialCharTok{==} \StringTok{"yes"}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{))}
+
+\CommentTok{\#How many bees per bee species per flower species in the original and the filtered datasets?}
+
+\NormalTok{visitation }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{group\_by}\NormalTok{(sample, plantsp, species) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{count}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 120 x 4
+## # Groups:   sample, plantsp, species [120]
+##    sample     plantsp   species      n
+##    <chr>      <chr>     <chr>    <int>
+##  1 CORYBIF001 corydalis bifarius     5
+##  2 CORYBIF002 corydalis bifarius     1
+##  3 CORYBIF003 corydalis bifarius     2
+##  4 CORYBIF004 corydalis bifarius    16
+##  5 CORYBIF005 corydalis bifarius     1
+##  6 CORYBIF006 corydalis bifarius    11
+##  7 CORYBIF007 corydalis bifarius    10
+##  8 CORYBIF008 corydalis bifarius    10
+##  9 CORYBIF009 corydalis bifarius     1
+## 10 CORYBIF010 corydalis bifarius     1
+## # i 110 more rows
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{robbed\_flowers }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{group\_by}\NormalTok{(sample, plantsp, species, bee) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{count}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 49 x 5
+## # Groups:   sample, plantsp, species, bee [49]
+##    sample     plantsp   species    bee     n
+##    <chr>      <chr>     <chr>    <int> <int>
+##  1 CORYBIF001 corydalis bifarius     3     3
+##  2 CORYBIF004 corydalis bifarius     3    15
+##  3 CORYBIF006 corydalis bifarius     7    11
+##  4 CORYBIF007 corydalis bifarius     8    10
+##  5 CORYBIF008 corydalis bifarius     2     9
+##  6 CORYBIF011 corydalis bifarius     7    12
+##  7 CORYBIF012 corydalis bifarius     8    19
+##  8 CORYBIF014 corydalis bifarius     5    20
+##  9 CORYBIF017 corydalis bifarius    11     9
+## 10 CORYBIF019 corydalis bifarius     2     6
+## # i 39 more rows
+\end{verbatim}
+
+Simple summary statistics for time to rob (mean, SE) broken down by
+bumblebee species and plant sp. Note that time to rob is longer for
+control flowers, but also SE higher for controls. Consistent response
+for Mreu plants. Tactic switch, I just converted into a binary column
+yes = 1, no = 0. Feeding time is higher in both treatments, with high SE
+but consistent throughout.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{summary\_stats }\OtherTok{\textless{}{-}}\NormalTok{ robbed\_flowers }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(species, treatment, plantsp) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{Mean\_TimeToRob =} \FunctionTok{mean}\NormalTok{(timetorob, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{SE\_TimeToRob =} \FunctionTok{sd}\NormalTok{(timetorob, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{) }\SpecialCharTok{/} \FunctionTok{sqrt}\NormalTok{(}\FunctionTok{n}\NormalTok{()),}
+    \AttributeTok{Mean\_TimeFeeding =} \FunctionTok{mean}\NormalTok{(timefeeding, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{SE\_TimeFeeding =} \FunctionTok{sd}\NormalTok{(timetorob, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{) }\SpecialCharTok{/} \FunctionTok{sqrt}\NormalTok{(}\FunctionTok{n}\NormalTok{()),}
+    \AttributeTok{Mean\_tacticswitch =} \FunctionTok{mean}\NormalTok{(trytolegit\_binary, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{SE\_tacticswitch =} \FunctionTok{sd}\NormalTok{(trytolegit\_binary, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{) }\SpecialCharTok{/} \FunctionTok{sqrt}\NormalTok{(}\FunctionTok{n}\NormalTok{())}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{arrange}\NormalTok{(plantsp, treatment)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `summarise()` has grouped output by 'species', 'treatment'. You can override
+## using the `.groups` argument.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{print}\NormalTok{(summary\_stats)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 6 x 9
+## # Groups:   species, treatment [4]
+##   species    treatment plantsp   Mean_TimeToRob SE_TimeToRob Mean_TimeFeeding
+##   <chr>      <chr>     <chr>              <dbl>        <dbl>            <dbl>
+## 1 bifarius   control   corydalis           5.42        0.637             7.76
+## 2 flavifrons control   corydalis           5.24        0.672             8.04
+## 3 bifarius   mreu      corydalis           4.16        0.343             7.09
+## 4 flavifrons mreu      corydalis           3.20        0.272             8.04
+## 5 flavifrons control   mertensia           7.12        1.08              9.25
+## 6 flavifrons mreu      mertensia           3.97        0.426             8.06
+## # i 3 more variables: SE_TimeFeeding <dbl>, Mean_tacticswitch <dbl>,
+## #   SE_tacticswitch <dbl>
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{write.table}\NormalTok{(summary\_stats, }\StringTok{"results/summary\_feeding\_stats.csv"}\NormalTok{, }\AttributeTok{row.names =} \ConstantTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Summarize the data to calculate the number of visits}
+\NormalTok{summary\_data }\OtherTok{\textless{}{-}}\NormalTok{ robbed\_flowers }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(treatment, species, plantsp) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{number\_of\_visits =} \FunctionTok{n}\NormalTok{(),  }\CommentTok{\# Count the number of visits}
+    \AttributeTok{.groups =} \StringTok{"drop"}
+\NormalTok{  )}
+
+\CommentTok{\# Calculate the mean, stdev, and se for each treatment group (control vs mreu)}
+\NormalTok{visit\_summary }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(species, plantsp) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{mean\_visits\_control =} \FunctionTok{mean}\NormalTok{(number\_of\_visits[treatment }\SpecialCharTok{==} \StringTok{"control"}\NormalTok{], }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{mean\_visits\_treated =} \FunctionTok{mean}\NormalTok{(number\_of\_visits[treatment }\SpecialCharTok{==} \StringTok{"mreu"}\NormalTok{], }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{stdev\_diff =} \FunctionTok{sd}\NormalTok{(number\_of\_visits[treatment }\SpecialCharTok{==} \StringTok{"mreu"}\NormalTok{] }\SpecialCharTok{{-}}\NormalTok{ number\_of\_visits[treatment }\SpecialCharTok{==} \StringTok{"control"}\NormalTok{], }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{se\_diff =}\NormalTok{ stdev\_diff }\SpecialCharTok{/} \FunctionTok{sqrt}\NormalTok{(}\FunctionTok{n}\NormalTok{()),}
+    \AttributeTok{.groups =} \StringTok{"drop"}
+\NormalTok{  )}
+
+\CommentTok{\# View the resulting summary table}
+\FunctionTok{print}\NormalTok{(visit\_summary)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 6
+##   species    plantsp  mean_visits_control mean_visits_treated stdev_diff se_diff
+##   <chr>      <chr>                  <dbl>               <dbl>      <dbl>   <dbl>
+## 1 bifarius   corydal~                 114                 141         NA      NA
+## 2 flavifrons corydal~                  47                 128         NA      NA
+## 3 flavifrons mertens~                  39                  78         NA      NA
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Perform t{-}tests for each species and plantsp combination}
+\NormalTok{t\_test\_results }\OtherTok{\textless{}{-}}\NormalTok{ robbed\_flowers }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(species, plantsp) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{t\_test =} \FunctionTok{list}\NormalTok{(}
+      \FunctionTok{t.test}\NormalTok{(}
+        \AttributeTok{x =}\NormalTok{ treatment }\SpecialCharTok{==} \StringTok{"mreu"}\NormalTok{,    }\CommentTok{\# Logical vector for mreu}
+        \AttributeTok{y =}\NormalTok{ treatment }\SpecialCharTok{==} \StringTok{"control"} \CommentTok{\# Logical vector for control}
+\NormalTok{      )}
+\NormalTok{    ),}
+    \AttributeTok{.groups =} \StringTok{"drop"}
+\NormalTok{  )}
+
+\CommentTok{\# Extract p{-}values and t{-}statistics from the t{-}test results}
+\NormalTok{t\_test\_summary }\OtherTok{\textless{}{-}}\NormalTok{ t\_test\_results }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{p\_value =} \FunctionTok{sapply}\NormalTok{(t\_test, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{p.value),        }\CommentTok{\# Extract p{-}value}
+    \AttributeTok{statistic =} \FunctionTok{sapply}\NormalTok{(t\_test, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{statistic)    }\CommentTok{\# Extract t{-}statistic}
+\NormalTok{  )}
+
+\CommentTok{\# Select only necessary columns}
+\NormalTok{t\_test\_summary }\OtherTok{\textless{}{-}}\NormalTok{ t\_test\_summary }\SpecialCharTok{\%\textgreater{}\%}
+\NormalTok{  dplyr}\SpecialCharTok{::}\FunctionTok{select}\NormalTok{(species, plantsp, p\_value, statistic)}
+
+\CommentTok{\# View the summarized results}
+\FunctionTok{print}\NormalTok{(t\_test\_summary)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 4
+##   species    plantsp    p_value statistic
+##   <chr>      <chr>        <dbl>     <dbl>
+## 1 bifarius   corydalis 1.68e- 2      2.40
+## 2 flavifrons corydalis 5.52e-20      9.74
+## 3 flavifrons mertensia 1.77e- 7      5.39
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Extract p{-}values, t{-}statistics, and degrees of freedom from the t{-}test results}
+\NormalTok{t\_test\_summary }\OtherTok{\textless{}{-}}\NormalTok{ t\_test\_results }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{p\_value =} \FunctionTok{sapply}\NormalTok{(t\_test, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{p.value),        }\CommentTok{\# Extract p{-}value}
+    \AttributeTok{statistic =} \FunctionTok{sapply}\NormalTok{(t\_test, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{statistic),    }\CommentTok{\# Extract t{-}statistic}
+    \AttributeTok{df =} \FunctionTok{sapply}\NormalTok{(t\_test, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{parameter)            }\CommentTok{\# Extract degrees of freedom}
+\NormalTok{  )}
+
+\CommentTok{\# Explicitly use dplyr::select()}
+\NormalTok{t\_test\_summary }\OtherTok{\textless{}{-}}\NormalTok{ t\_test\_summary }\SpecialCharTok{\%\textgreater{}\%}
+\NormalTok{  dplyr}\SpecialCharTok{::}\FunctionTok{select}\NormalTok{(species, plantsp, p\_value, statistic, df)}
+
+\CommentTok{\# View the summarized results}
+\FunctionTok{print}\NormalTok{(t\_test\_summary)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 5
+##   species    plantsp    p_value statistic    df
+##   <chr>      <chr>        <dbl>     <dbl> <dbl>
+## 1 bifarius   corydalis 1.68e- 2      2.40   508
+## 2 flavifrons corydalis 5.52e-20      9.74   348
+## 3 flavifrons mertensia 1.77e- 7      5.39   232
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Create a histogram}
+\FunctionTok{ggplot}\NormalTok{(robbed\_flowers, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{interaction}\NormalTok{(species, plantsp), }\AttributeTok{fill =}\NormalTok{ treatment)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_bar}\NormalTok{(}\AttributeTok{position =} \StringTok{"dodge"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \ConstantTok{NULL}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Number of Visits"}\NormalTok{,}
+    \AttributeTok{fill =} \StringTok{"Flower Treatment"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}
+    \AttributeTok{values =} \FunctionTok{c}\NormalTok{(}\StringTok{"mreu"} \OtherTok{=} \StringTok{"\#4169E1"}\NormalTok{,}
+               \StringTok{"control"} \OtherTok{=} \StringTok{"\#FAFAD2"}\NormalTok{)}
+\NormalTok{  )}\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.title =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+    \AttributeTok{legend.text =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{9}\NormalTok{)}
+\NormalTok{  ) }\OtherTok{{-}\textgreater{}}\NormalTok{ plot}
+
+\NormalTok{plot}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{bumblebeeRobbing_script2_files/figure-latex/unnamed-chunk-2-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggsave}\NormalTok{(}\StringTok{"results/bee\_visits\_histogram.pdf"}\NormalTok{, }\AttributeTok{plot =}\NormalTok{ plot, }\AttributeTok{width =} \DecValTok{8}\NormalTok{, }\AttributeTok{height =} \DecValTok{6}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{summary\_df }\OtherTok{\textless{}{-}}\NormalTok{ robbed\_flowers }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}\AttributeTok{group =} \FunctionTok{interaction}\NormalTok{(species, plantsp), treatment) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{count =} \FunctionTok{n}\NormalTok{(), }\AttributeTok{.groups =} \StringTok{"drop"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(group) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}
+    \AttributeTok{max\_y =} \FunctionTok{max}\NormalTok{(count),}
+    \AttributeTok{x\_pos =} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{factor}\NormalTok{(group)),  }\CommentTok{\# for proper placement on x axis}
+    \AttributeTok{.groups =} \StringTok{"drop"}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{label =} \StringTok{"*"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Returning more (or less) than 1 row per `summarise()` group was deprecated in
+## dplyr 1.1.0.
+## i Please use `reframe()` instead.
+## i When switching from `summarise()` to `reframe()`, remember that `reframe()`
+##   always returns an ungrouped data frame and adjust accordingly.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(robbed\_flowers, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{interaction}\NormalTok{(species, plantsp), }\AttributeTok{fill =}\NormalTok{ treatment)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_bar}\NormalTok{(}\AttributeTok{position =} \FunctionTok{position\_dodge}\NormalTok{(}\AttributeTok{width =} \FloatTok{0.9}\NormalTok{), }\AttributeTok{color =} \StringTok{"black"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_text}\NormalTok{(}
+    \AttributeTok{data =}\NormalTok{ summary\_df,}
+    \FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ group, }\AttributeTok{y =}\NormalTok{ max\_y }\SpecialCharTok{+} \DecValTok{2}\NormalTok{, }\AttributeTok{label =}\NormalTok{ label),}
+    \AttributeTok{inherit.aes =} \ConstantTok{FALSE}\NormalTok{,}
+    \AttributeTok{size =} \DecValTok{6}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \ConstantTok{NULL}\NormalTok{,}
+       \AttributeTok{y =} \StringTok{"Number of Visits"}\NormalTok{,}
+       \AttributeTok{fill =} \StringTok{"Flower Treatment"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}
+    \AttributeTok{values =} \FunctionTok{c}\NormalTok{(}\StringTok{"mreu"} \OtherTok{=} \StringTok{"\#4169E1"}\NormalTok{, }\StringTok{"control"} \OtherTok{=} \StringTok{"\#FAFAD2"}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.title =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+    \AttributeTok{legend.text =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{9}\NormalTok{)}
+\NormalTok{  ) }\OtherTok{{-}\textgreater{}}\NormalTok{ plot2}
+
+\NormalTok{plot2}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{bumblebeeRobbing_script2_files/figure-latex/unnamed-chunk-3-1.pdf}}
+
+\end{document}
