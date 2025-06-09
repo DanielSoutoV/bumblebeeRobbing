@@ -1,0 +1,602 @@
+---
+title: "BumblebeeRobbing"
+author: "Daniel"
+date: "2025-06-09"
+output: html_document
+---
+
+Behavioral assays done on bumblebees at Rocky Mountains Biology Laboratory (RMBL) field season 2023.
+Observations were carried out by Nick Dabagia and Daniel Souto for Corydalis and Mertensia species.
+Y-Tube assays carried out by Oriana Gutierrez in 2024.
+
+Methods:
+
+Study sites:
+
+Samples of Corydalis caseana were collected at Washington Gulch campsite (coords:) and behavioral assays carried out between the X and X of July 2024. Mertensia ciliata was sampled at Schoffield Pass (coords:) between X and X of August 2024. For both wildflower species, budding individuals were covered with fine mesh bags to prevent flower visitors for at least 24 hours before manipulation. On the day of the experiments, multiple stalks were cut, kept in waterpics and trimmed to a total of 10 or 5 flowers (for Corydalis and Mertensia respectively) per stalk.
+
+Plant treatments:
+
+Initially, we randomly selected six stalks and treated all flowers with either sterile or yeast inoculated nectar analogue. For this, we firstly used glass microcapillary tubes to remove as much nectar as possible from each flower, before using cotton wool to 'plug' the corolla to avoid legitimate visitation. Using a Hamilton syringe we created an artificial robbing wound and added 5ul of control or mreu nectar to all flowers according to the treatment. Remaining stalks were kept as a replacement for any stalk visited by bumblebees during our behavioral assays. 
+
+Treated stalks were randomly placed in waterpics within a plastic rubbermaid container with all side panels cut out and replaced with fine mesh for breathability.
+
+Bumblebee captures and behavioral assays:
+
+Using a net, individual bumblebees were captured at each site between 8:00 and 10:00 am and kept in individual vials inside a portable cooler kept in the shade. The cooler contained ice packs to avoid the bumblebees overheating, but care was taken to avoid temperature low enough to send them to sleep. 
+
+For Corydalis, Bombus flavifrons and B. bifarius were caught visiting Corydalis flowers. Whether or not they were robbing or legitimately visiting was challenging to see given floral morphology so they were caught regardless.
+
+For Mertensia, only B. flaviforns were caught, making sure they were legitimate visitors before capturing (following the bee for at least 5 flowers where she legitimately visited).
+
+Once the array was set up with the treated stalks randomly asigned to a waterpic within the observation box, a single bumblebee was introduced to the array and allowed her 10 minutes to make a choice. Using a voice recorder we noted the plant stalk visited (1-6) and noting when the bumblebee would find the artificial robbing hole (saying 'in' on the recorder), noting when the bumblebee stopped feeding (saying 'out') and recording her next flower visit on the same or different stalk. This strategy allowed us to record the time it took an individual to find a robbing hole, and how long it spent feeding on that individual flower. This information was recorded for every visit within the array, and the 'feeding bout' was considered done when the bee flew to the sides of the box and appeared uninterested on returning to the flower stalks. The bumblebee was removed from the box and marked with POSCA Bee marking pens to avoid future recaptures (we found several marked bumblebees in subsequent days suggesting that our handling and treatment was not too traumatic).
+
+Data analysis:
+
+The datasts are arranged as date, plant species, bee individual, bee species, whether or not a choice was made, stalk number, treatment, whether or not the bee tried to legitimately visit the flower, whether it robbed the flower, time to rob, time feeding, flower number (total for that bout) and additional notes. 
+
+Note that not all packages are used in the current analysis
+```{r setup, include=FALSE, results=FALSE, warning=FALSE, message=TRUE}
+rm(list=ls()) #removes all objects from work space - good practice to start all R sessions with this
+library('ggplot2')
+library('tidyverse')
+library('dplyr')
+library('stats')
+library('multcomp')
+library('lme4')
+library('lmerTest')
+library('gridExtra')
+#library('ggpub')
+visitation<-read.csv("data/bumblebee_behavior_data.csv", header = T)
+```
+
+
+We need to wrangle the data a bit. Namely:
+Filter the data to include only cases where a flower was robbed (column CHOICE, "Yes"),
+Remove B. mixtus (we never got enough individuals),
+Remove a weird outlier which spent over 3 minutes just hanging out before making a move,
+Make sure all data is numeric and there are no missing data.
+
+This final data set includes: 57 total successful robber trials (out of 116 bee trials transcribed) 42 Corydalis 2° robbers (22 bifarius, 16 flavifrons, 4 mixtus) and 15 Mertensia 2° robbers (all flavifrons)
+
+```{r filtering data}
+robbed_flowers <- visitation %>%
+  filter(robbed == "yes") %>% #note that this will reduce total number of bees which made a choice since not all of them actually 'robbed'
+  filter(species != "mixtus")%>%
+  filter(timetorob !=154.7) 
+
+robbed_flowers <- robbed_flowers %>%
+  mutate(
+    timetorob = as.numeric(timetorob),
+    timefeeding = as.numeric(timefeeding)
+  ) %>%
+  filter(!is.na(timetorob) & !is.na(timefeeding))
+
+robbed_flowers <- robbed_flowers %>%
+  mutate(trytolegit_binary = ifelse(trytolegit == "yes", 1, 0))
+
+#How many bees per bee species per flower species in the original and the filtered datasets?
+
+visitation %>% group_by(sample, plantsp, species) %>% count()
+
+robbed_flowers %>% group_by(sample, plantsp, species, bee) %>% count()
+```
+
+Simple summary statistics for time to rob (mean, SE) broken down by bumblebee species and plant sp. 
+Note that time to rob is longer for control flowers, but also SE higher for controls. Consistent response for Mreu plants. Tactic switch, I just converted into a binary column yes = 1, no = 0. Feeding time is higher in both treatments, with high SE but consistent throughout.
+
+```{r summary stats }
+summary_stats <- robbed_flowers %>%
+  group_by(species, treatment, plantsp) %>%
+  summarize(
+    Mean_TimeToRob = mean(timetorob, na.rm = TRUE),
+    SE_TimeToRob = sd(timetorob, na.rm = TRUE) / sqrt(n()),
+    Mean_TimeFeeding = mean(timefeeding, na.rm = TRUE),
+    SE_TimeFeeding = sd(timetorob, na.rm = TRUE) / sqrt(n()),
+    Mean_tacticswitch = mean(trytolegit_binary, na.rm = TRUE),
+    SE_tacticswitch = sd(trytolegit_binary, na.rm = TRUE) / sqrt(n())
+  ) %>% 
+  arrange(plantsp, treatment)
+
+
+print(summary_stats)
+
+write.table(summary_stats, "results/summary_feeding_stats.csv", row.names = FALSE)
+```
+
+
+```{r}
+# Summarize the data to calculate the number of visits
+summary_data <- robbed_flowers %>%
+  group_by(treatment, species, plantsp) %>%
+  summarize(
+    number_of_visits = n(),  # Count the number of visits
+    .groups = "drop"
+  )
+
+# Calculate the mean, stdev, and se for each treatment group (control vs mreu)
+visit_summary <- summary_data %>%
+  group_by(species, plantsp) %>%
+  summarize(
+    mean_visits_control = mean(number_of_visits[treatment == "control"], na.rm = TRUE),
+    mean_visits_treated = mean(number_of_visits[treatment == "mreu"], na.rm = TRUE),
+    stdev_diff = sd(number_of_visits[treatment == "mreu"] - number_of_visits[treatment == "control"], na.rm = TRUE),
+    se_diff = stdev_diff / sqrt(n()),
+    .groups = "drop"
+  )
+
+# View the resulting summary table
+print(visit_summary)
+# Perform t-tests for each species and plantsp combination
+t_test_results <- robbed_flowers %>%
+  group_by(species, plantsp) %>%
+  summarize(
+    t_test = list(
+      t.test(
+        x = treatment == "mreu",    # Logical vector for mreu
+        y = treatment == "control" # Logical vector for control
+      )
+    ),
+    .groups = "drop"
+  )
+
+# Extract p-values and t-statistics from the t-test results
+t_test_summary <- t_test_results %>%
+  mutate(
+    p_value = sapply(t_test, function(x) x$p.value),        # Extract p-value
+    statistic = sapply(t_test, function(x) x$statistic)    # Extract t-statistic
+  )
+
+# Select only necessary columns
+t_test_summary <- t_test_summary %>%
+  dplyr::select(species, plantsp, p_value, statistic)
+
+# View the summarized results
+print(t_test_summary)
+
+# Extract p-values, t-statistics, and degrees of freedom from the t-test results
+t_test_summary <- t_test_results %>%
+  mutate(
+    p_value = sapply(t_test, function(x) x$p.value),        # Extract p-value
+    statistic = sapply(t_test, function(x) x$statistic),    # Extract t-statistic
+    df = sapply(t_test, function(x) x$parameter)            # Extract degrees of freedom
+  )
+
+# Explicitly use dplyr::select()
+t_test_summary <- t_test_summary %>%
+  dplyr::select(species, plantsp, p_value, statistic, df)
+
+# View the summarized results
+print(t_test_summary)
+```
+
+```{r}
+
+# Create a histogram
+ggplot(robbed_flowers, aes(x = interaction(species, plantsp), fill = treatment)) +
+  geom_bar(position = "dodge", color = "black") +
+  labs(x = NULL,
+    y = "Number of Visits",
+    fill = "Flower Treatment"
+  ) +
+  scale_fill_manual(
+    values = c("mreu" = "#4169E1",
+               "control" = "#FAFAD2")
+  )+
+  theme_minimal() +
+  theme(
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9)
+  ) -> plot
+
+plot
+
+ggsave("results/bee_visits_histogram.pdf", plot = plot, width = 8, height = 6)
+```
+```{r}
+
+summary_df <- robbed_flowers %>%
+  group_by(group = interaction(species, plantsp), treatment) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(group) %>%
+  summarise(
+    max_y = max(count),
+    x_pos = as.numeric(factor(group)),  # for proper placement on x axis
+    .groups = "drop"
+  ) %>%
+  mutate(label = "*")
+
+ggplot(robbed_flowers, aes(x = interaction(species, plantsp), fill = treatment)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "black") +
+  geom_text(
+    data = summary_df,
+    aes(x = group, y = max_y + 2, label = label),
+    inherit.aes = FALSE,
+    size = 6
+  ) +
+  labs(x = NULL,
+       y = "Number of Visits",
+       fill = "Flower Treatment") +
+  scale_fill_manual(
+    values = c("mreu" = "#4169E1", "control" = "#FAFAD2")
+  ) +
+  theme_minimal() +
+  theme(
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9)
+  ) -> plot2
+
+plot2
+
+```
+
+
+```{r time to rob boxplot}
+
+mean_se <- function(x) {
+  m <- mean(x, na.rm = TRUE)
+  se <- sd(x, na.rm = TRUE) / sqrt(length(na.omit(x)))
+  return(paste0(round(m, 2), " ± ", round(se, 2)))
+}
+
+timetorob_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, plantsp), y = timetorob, fill = treatment)) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(width = 0.75)) + 
+  geom_point(position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75), 
+             aes(shape = treatment, color = treatment),
+             size = 1, alpha = 0.75) +
+  stat_summary(
+    fun.data = function(x) {
+      m <- mean(x)
+      se <- sd(x) / sqrt(length(x))
+      data.frame(y = m + se * -1.5, label = sprintf("%.2f ± %.2f", m, se))
+    },
+    geom = "text",
+    position = position_dodge(width = 0.75),
+    size = 3,
+    vjust = 0,
+    color = "black"
+  ) +
+  scale_fill_manual(
+    values = c("mreu" = "#4169E1",
+               "control" = "#FAFAD2")
+  )+
+  scale_color_manual(
+    values = c("mreu" = "#4169E1",
+               "control" = "#EEDD82")
+  )+
+  labs(
+    title = "Time to rob by bee species and treatment",
+    x = NULL,
+    y = "Time to Rob"
+  ) +
+  #scale_fill_discrete(name = "Treatment") +
+  #scale_color_discrete(name = "Treatment") +
+  scale_shape_manual(name = "Treatment", values = c(16, 17), guide = "none") +
+  theme_minimal()
+
+timetorob <- timetorob_box_species +
+  coord_cartesian(ylim = c(0, 40))
+
+timetorob
+ggsave("results/timetorob_pub.pdf", plot = timetorob, width = 8, height = 6)
+```
+
+
+ANOVA  time to rob on bee species (1) and plant species (2) - in both cases treatment is highly significant, but interaction between either plant or bee species and treatment is not. Suggests instead that only the nectar treatment significantly different
+
+```{r ANOVA}
+anova_result <- aov(timetorob ~ species * treatment, data = robbed_flowers)
+summary(anova_result) 
+
+anova_result_plant <- aov(timetorob ~ plantsp * treatment, data = robbed_flowers)
+summary(anova_result_plant) 
+```
+
+To make sure this significance holds, I did wilcox test only on the mean time to rob. Again, significantly different (p = < 0.05)
+
+```{r wilcox test}
+treatment_control <- subset(robbed_flowers, treatment == "control") #control subset
+treatment_mreu <- subset(robbed_flowers, treatment == "mreu") #inoculated flowers subset
+
+# Perform the Wilcoxon rank-sum test
+wilcox_test_result <- wilcox.test(treatment_control$timetorob, treatment_mreu$timetorob) #wilcox test
+
+# Print the test result
+print(wilcox_test_result) #wilcox result - highly significant difference of mean time to rob between treatments
+
+```
+
+We do the same analysis for feedint time and show that there is no significant difference between treatments on the feeding time of bees. It seems that yeast does not have a significant flavor(?) difference or not not different enough or nasty enough for bees to care. They spend the same amount of time feeding on sterile or yeast innoculated nectar
+
+```{r feeding time}
+feedingtime_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, plantsp), y = timefeeding, fill = treatment)) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(width = 0.75)) + 
+  geom_point(position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75), 
+             aes(shape = treatment, color = treatment),
+             size = 1, alpha = 0.75) +
+  stat_summary(
+    fun.data = function(x) {
+      m <- mean(x)
+      se <- sd(x) / sqrt(length(x))
+      data.frame(y = m + se * -.5, label = sprintf("%.2f ± %.2f", m, se))
+    },
+    geom = "text",
+    position = position_dodge(width = 0.75),
+    size = 3,
+    vjust = 0,
+    color = "black"
+  ) +
+  scale_fill_manual(
+    values = c("mreu" = "#4169E1",
+               "control" = "#FAFAD2")
+  )+
+  scale_color_manual(
+    values = c("mreu" = "#4169E1",
+               "control" = "#EEDD82")
+  )+
+  labs(
+    title = "Feeding time by bee species and treatment",
+    x = NULL,
+    y = "Time to Rob"
+  ) +
+  #scale_fill_discrete(name = "Treatment") +
+  #scale_color_discrete(name = "Treatment") +
+  scale_shape_manual(name = "Treatment", values = c(16, 17), guide = "none") +
+  theme_minimal()
+
+feedingtime_box_species
+
+ggsave("results/feeding_pub.pdf", plot = feedingtime_box_species, width = 8, height = 6)
+
+```
+
+ANOVA and wilcox test confirm. No difference on time spent feeding depending on treatment of nectar.
+
+```{r ANOVA and Wilcox feeding time}
+anova_result_feeding <- aov(timefeeding ~ species * treatment, data = robbed_flowers)
+
+# Print the ANOVA table
+summary(anova_result_feeding)
+
+# Perform the Wilcoxon rank-sum test
+wilcox_test_result_feeding <- wilcox.test(treatment_control$timefeeding, treatment_mreu$timefeeding)
+
+# Print the test result
+print(wilcox_test_result_feeding)
+```
+
+This included all plant species combined.
+Below I break down everything per plant species (Corydalis and Mertensia)
+
+First subset data 
+
+```{r subset per plants}
+corydalis <- subset(robbed_flowers, plantsp == "corydalis")
+mertensia <- subset(robbed_flowers, plantsp == "mertensia")
+```
+
+Since for Corydalis we have 2 bee species, I still did ANOVA. For Mertensia, there is only one bee species so makes more sense to do wilcox. In the case of Corydalis, the two bee species take different times to find the robbing hole (p = 0.03), while time to find the hole for different treatments is stil highly significant (p =0.001). We could do different analysis for each bee species, if worth it.
+
+```{r Corydalis ANOVA}
+anova_result_robbing_corydalis <- aov(timetorob ~ species * treatment, data = corydalis)
+# Print the ANOVA table
+summary(anova_result_robbing_corydalis)
+
+anova_result_feeding_corydalis <- aov(timefeeding ~ species * treatment, data = corydalis)
+# Print the ANOVA table
+summary(anova_result_feeding_corydalis)
+```
+For Corydalis, significant difference both for species and treatment, but not the interaction. 
+So, bee species show difference in the time it takes to find a robbing hole (p = 0.03), and significantly different according to treatment (p = 0.001).
+
+Wilcox test for mertenisa, time to rob significantly different between treatments (P = 0.006)
+```{r wilcox for mertensia}
+
+wilcox_mertensia_timetorob <- wilcox.test(timetorob ~ treatment, data = mertensia)
+wilcox_mertensia_timetorob
+
+```
+
+```{r }
+legit_summary <- corydalis %>%
+  group_by(unique_name) %>%
+  summarise(trytolegit_binary = sum(trytolegit_binary))
+
+print(legit_summary)
+
+visit_summary <- corydalis %>%
+  group_by(unique_name) %>%
+  summarise(total_visits = n(),
+            legit_visits = sum(trytolegit == 'yes'))
+
+visit_summary
+```
+
+```{r}
+y_tube <- read.csv("data/y_tube_ori_2025.csv", header = T)
+
+table(y_tube$Initial_Choice)
+chisq.test(table(y_tube$Initial_Choice))
+ 
+t <- t.test(y_tube$Yeast_time, y_tube$Control_time, paired = TRUE, alternative = "greater") 
+t
+```
+
+```{r}
+
+corydalis_bifarius <- subset(corydalis, species == "bifarius")
+corydalis_flavifrons <- subset(corydalis, species == "flavifrons")
+
+summary_corydalis <- corydalis %>%
+  group_by(unique_name) %>%
+  summarise(total_visits = n(),
+            legit_visits = sum(trytolegit == 'yes'))
+
+
+# Create a new column indicating whether trytolegit_binary > 0
+legit_summary <- legit_summary %>%
+  mutate(trytolegit_gt_0 = ifelse(trytolegit_binary > 0, "Trytolegit > 0", "Trytolegit = 0"))
+
+# Summarize the data by the new column
+summary_data <- legit_summary %>%
+  group_by(trytolegit_gt_0) %>%
+  summarise(total_visits = n())
+
+# Calculate total visits
+total_visits <- sum(summary_data$total_visits)
+
+# Calculate percentage of visits for each category
+summary_data <- summary_data %>%
+  mutate(percentage = total_visits / sum(total_visits))
+
+# Plot the barplot
+ggplot(summary_data, aes(x = "", y = total_visits, fill = trytolegit_gt_0)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  geom_text(aes(label = scales::percent(percentage)), 
+            position = position_stack(vjust = 0.5), 
+            color = "white", size = 5) +
+  labs(x = NULL, y = "Total Visits") +
+  scale_fill_manual(values = c("Trytolegit = 0" = "gray", "Trytolegit > 0" = "black")) +
+  theme_minimal() +
+  theme(axis.text.x=element_blank())  # Hide x-axis label
+
+
+```
+
+```{r }
+legit_summary_mert <- mertensia %>%
+  group_by(unique_name) %>%
+  summarise(trytolegit_binary = sum(trytolegit_binary))
+
+print(legit_summary_mert)
+
+visit_summary_mert <- mertensia %>%
+  group_by(unique_name) %>%
+  summarise(total_visits = n(),
+            legit_visits = sum(trytolegit == 'yes'))
+
+visit_summary_mert
+```
+ 
+```{r}
+summary_mertensia <- mertensia %>%
+  group_by(unique_name) %>%
+  summarise(total_visits = n(),
+            legit_visits = sum(trytolegit == 'yes'))
+
+
+# Create a new column indicating whether trytolegit_binary > 0
+legit_summary_mert <- legit_summary_mert %>%
+  mutate(trytolegit_gt_0 = ifelse(trytolegit_binary > 0, "Trytolegit > 0", "Trytolegit = 0"))
+
+# Summarize the data by the new column
+summary_data_mert <- legit_summary_mert %>%
+  group_by(trytolegit_gt_0) %>%
+  summarise(total_visits = n())
+
+# Calculate total visits
+total_visits_mert <- sum(summary_data_mert$total_visits)
+
+# Calculate percentage of visits for each category
+summary_data_mert <- summary_data_mert %>%
+  mutate(percentage = total_visits / sum(total_visits))
+
+# Plot the barplot
+ggplot(summary_data_mert, aes(x = "", y = total_visits, fill = trytolegit_gt_0)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  geom_text(aes(label = scales::percent(percentage)), 
+            position = position_stack(vjust = 0.5), 
+            color = "white", size = 5) +
+  labs(x = NULL, y = "Total Visits") +
+  scale_fill_manual(values = c("Trytolegit = 0" = "gray", "Trytolegit > 0" = "black")) +
+  theme_minimal() +
+  theme(axis.text.x=element_blank())  # Hide x-axis label
+```
+
+```{r}
+summary_cory_bif <- corydalis_bifarius %>%
+  group_by(unique_name) %>%
+  summarise(total_visits = n(),
+            legit_visits = sum(trytolegit == 'yes'))
+legit_summary_corybif <- corydalis_bifarius %>%
+  group_by(unique_name) %>%
+  summarise(trytolegit_binary = sum(trytolegit_binary))
+
+visit_summary_corybif <- corydalis_bifarius %>%
+  group_by(unique_name) %>%
+  summarise(total_visits = n(),
+            legit_visits = sum(trytolegit == 'yes'))
+
+
+# Create a new column indicating whether trytolegit_binary > 0
+legit_summary_corybif <- legit_summary_corybif %>%
+  mutate(trytolegit_gt_0 = ifelse(trytolegit_binary > 0, "Trytolegit > 0", "Trytolegit = 0"))
+
+# Summarize the data by the new column
+summary_data_corybif <- legit_summary_corybif %>%
+  group_by(trytolegit_gt_0) %>%
+  summarise(total_visits = n())
+
+# Calculate total visits
+total_visits_corybif <- sum(summary_data_corybif$total_visits)
+
+# Calculate percentage of visits for each category
+summary_data_corybif <- summary_data_corybif %>%
+  mutate(percentage = total_visits / sum(total_visits))
+
+# Plot the barplot
+ggplot(summary_data_corybif, aes(x = "", y = total_visits, fill = trytolegit_gt_0)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  geom_text(aes(label = scales::percent(percentage)), 
+            position = position_stack(vjust = 0.5), 
+            color = "white", size = 5) +
+  labs(x = NULL, y = "Total Visits B. bifarius on Corydalis") +
+  scale_fill_manual(values = c("Trytolegit = 0" = "gray", "Trytolegit > 0" = "black")) +
+  theme_minimal() +
+  theme(axis.text.x=element_blank())  # Hide x-axis label
+
+```
+
+```{r}
+ summary_cory_flav <- corydalis_flavifrons %>%
+  group_by(unique_name) %>%
+  summarise(total_visits = n(),
+            legit_visits = sum(trytolegit == 'yes'))
+legit_summary_coryflav <- corydalis_flavifrons %>%
+  group_by(unique_name) %>%
+  summarise(trytolegit_binary = sum(trytolegit_binary))
+
+visit_summary_coryflav <- corydalis_flavifrons %>%
+  group_by(unique_name) %>%
+  summarise(total_visits = n(),
+            legit_visits = sum(trytolegit == 'yes'))
+
+
+# Create a new column indicating whether trytolegit_binary > 0
+legit_summary_coryflav <- legit_summary_coryflav %>%
+  mutate(trytolegit_gt_0 = ifelse(trytolegit_binary > 0, "Trytolegit > 0", "Trytolegit = 0"))
+
+# Summarize the data by the new column
+summary_data_coryflav <- legit_summary_coryflav %>%
+  group_by(trytolegit_gt_0) %>%
+  summarise(total_visits = n())
+
+# Calculate total visits
+total_visits_coryflav <- sum(summary_data_coryflav$total_visits)
+
+# Calculate percentage of visits for each category
+summary_data_coryflav <- summary_data_coryflav %>%
+  mutate(percentage = total_visits / sum(total_visits))
+
+# Plot the barplot
+ggplot(summary_data_coryflav, aes(x = "", y = total_visits, fill = trytolegit_gt_0)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  geom_text(aes(label = scales::percent(percentage)), 
+            position = position_stack(vjust = 0.5), 
+            color = "white", size = 5) +
+  labs(x = NULL, y = "Total Visits B. flavifrons on Corydalis") +
+  scale_fill_manual(values = c("Trytolegit = 0" = "gray", "Trytolegit > 0" = "black")) +
+  theme_minimal() +
+  theme(axis.text.x=element_blank())  # Hide x-axis label
+```
+ 
