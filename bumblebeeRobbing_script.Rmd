@@ -36,10 +36,11 @@ visitation<-read.csv("data/bumblebee_behavior_data.csv", header = T)
 
 We need to wrangle the data a bit. Namely:
 Filter the data to include only cases where a flower was robbed (column CHOICE, "Yes"),
-Remove B. mixtus (we never got enough individuals),
 Remove an outlier which was inactive on a flwoer over 3 minutes. Make sure all data is numeric and there are no missing data.
 
-This final data set includes: 57 total successful robber trials (out of 116 bee trials transcribed) 42 Corydalis 2° robbers (22 bifarius, 16 flavifrons, 4 mixtus) and 15 Mertensia 2° robbers (all flavifrons)
+This final data set includes: 57 total successful robber trials (out of 116 bee trials transcribed) 42 Corydalis 2° robbers (22 bifarius, 16 flavifrons, 4 mixtus) and 15 Mertensia 2° robbers (all flavifrons).
+
+Bombus mixtus removed from final analysis due to low sample size.
 
 ```{r filtering data}
 robbed_flowers <- visitation %>%
@@ -167,6 +168,8 @@ ggplot(robbed_flowers, aes(x = interaction(species, plantsp), fill = treatment))
   )+
   theme_minimal() +
   theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 9)
   ) -> plot
@@ -204,6 +207,8 @@ ggplot(robbed_flowers, aes(x = interaction(species, plantsp), fill = treatment))
   ) +
   theme_minimal() +
   theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 9)
   ) -> plot2
@@ -254,7 +259,11 @@ timetorob_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, pla
   #scale_fill_discrete(name = "Treatment") +
   #scale_color_discrete(name = "Treatment") +
   scale_shape_manual(name = "Treatment", values = c(16, 17), guide = "none") +
-  theme_minimal()
+  theme_minimal()+
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
 
 timetorob <- timetorob_box_species +
   coord_cartesian(ylim = c(0, 40))
@@ -267,10 +276,10 @@ ggsave("results/timetorob_pub.pdf", plot = timetorob, width = 8, height = 6)
 ANOVA  time to rob on bee species (1) and plant species (2) - in both cases treatment is highly significant, but interaction between either plant or bee species and treatment is not. Suggests instead that only the nectar treatment significantly different
 
 ```{r ANOVA}
-anova_result <- aov(timetorob ~ species * treatment, data = robbed_flowers)
+anova_result <- aov(timetorob ~ species + treatment, data = robbed_flowers)
 summary(anova_result) 
 
-anova_result_plant <- aov(timetorob ~ plantsp * treatment, data = robbed_flowers)
+anova_result_plant <- aov(timetorob ~ plantsp + treatment, data = robbed_flowers)
 summary(anova_result_plant) 
 ```
 
@@ -324,7 +333,10 @@ feedingtime_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, p
   #scale_fill_discrete(name = "Treatment") +
   #scale_color_discrete(name = "Treatment") +
   scale_shape_manual(name = "Treatment", values = c(16, 17), guide = "none") +
-  theme_minimal()
+  theme_minimal()+
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+    )
 
 feedingtime_box_species
 
@@ -335,7 +347,7 @@ ggsave("results/feeding_pub.pdf", plot = feedingtime_box_species, width = 8, hei
 ANOVA and wilcox test confirm. No difference on time spent feeding depending on treatment of nectar.
 
 ```{r ANOVA and Wilcox feeding time}
-anova_result_feeding <- aov(timefeeding ~ species * treatment, data = robbed_flowers)
+anova_result_feeding <- aov(timefeeding ~ species + treatment, data = robbed_flowers)
 
 # Print the ANOVA table
 summary(anova_result_feeding)
@@ -360,11 +372,11 @@ mertensia <- subset(robbed_flowers, plantsp == "mertensia")
 Since for Corydalis we have 2 bee species, I still did ANOVA. For Mertensia, there is only one bee species so makes more sense to do wilcox. In the case of Corydalis, the two bee species take different times to find the robbing hole (p = 0.03), while time to find the hole for different treatments is stil highly significant (p =0.001). We could do different analysis for each bee species, if worth it.
 
 ```{r Corydalis ANOVA}
-anova_result_robbing_corydalis <- aov(timetorob ~ species * treatment, data = corydalis)
+anova_result_robbing_corydalis <- aov(timetorob ~ species + treatment, data = corydalis)
 # Print the ANOVA table
 summary(anova_result_robbing_corydalis)
 
-anova_result_feeding_corydalis <- aov(timefeeding ~ species * treatment, data = corydalis)
+anova_result_feeding_corydalis <- aov(timefeeding ~ species + treatment, data = corydalis)
 # Print the ANOVA table
 summary(anova_result_feeding_corydalis)
 ```
