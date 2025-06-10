@@ -166,17 +166,20 @@ ggplot(robbed_flowers, aes(x = interaction(species, plantsp), fill = treatment))
     values = c("mreu" = "#4169E1",
                "control" = "#FAFAD2")
   )+
+  scale_y_continuous(expand = c(0, 0)) +  # Ensures bars rest on the x-axis line
   theme_minimal() +
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.line.x = element_line(),
+    axis.line.y = element_line(),
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 9)
   ) -> plot
 
 plot
 
-ggsave("results/bee_visits_histogram.pdf", plot = plot, width = 8, height = 6)
 ```
 ```{r}
 
@@ -205,15 +208,21 @@ ggplot(robbed_flowers, aes(x = interaction(species, plantsp), fill = treatment))
   scale_fill_manual(
     values = c("mreu" = "#4169E1", "control" = "#FAFAD2")
   ) +
+  scale_y_continuous(expand = c(0, 0)) +  # Ensures bars rest on the x-axis line
   theme_minimal() +
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.line.x = element_line(),
+    axis.line.y = element_line(),
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 9)
   ) -> plot2
 
 plot2
+
+ggsave("results/bee_visits_histogram.pdf", plot = plot2, width = 8, height = 6)
 
 ```
 
@@ -259,10 +268,17 @@ timetorob_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, pla
   #scale_fill_discrete(name = "Treatment") +
   #scale_color_discrete(name = "Treatment") +
   scale_shape_manual(name = "Treatment", values = c(16, 17), guide = "none") +
-  theme_minimal()+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 40)) +
+  labs(
+    title = "Time to rob by bee species and treatment",
+    x = NULL,
+    y = "Time to Rob"
+  ) +
+  theme_minimal() +
   theme(
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
+    axis.line = element_line(color = "black"),
+    axis.line.x = element_line(),
+    axis.line.y = element_line()
   )
 
 timetorob <- timetorob_box_species +
@@ -333,10 +349,17 @@ feedingtime_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, p
   #scale_fill_discrete(name = "Treatment") +
   #scale_color_discrete(name = "Treatment") +
   scale_shape_manual(name = "Treatment", values = c(16, 17), guide = "none") +
-  theme_minimal()+
-  theme(panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-    )
+  scale_y_continuous(expand = c(0, 0)) +  # Ensures bars rest on the x-axis line
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.line.x = element_line(),
+    axis.line.y = element_line(),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9)
+  )
 
 feedingtime_box_species
 
