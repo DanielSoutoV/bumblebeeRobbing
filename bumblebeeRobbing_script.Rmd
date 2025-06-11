@@ -180,6 +180,8 @@ ggplot(robbed_flowers, aes(x = interaction(species, plantsp), fill = treatment))
 
 plot
 
+ggsave("results/bee_visits_histogram.pdf", plot = plot, width = 8, height = 6)
+
 ```
 ```{r}
 
@@ -261,7 +263,7 @@ timetorob_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, pla
                "control" = "#EEDD82")
   )+
   labs(
-    title = "Time to rob by bee species and treatment",
+    #title = "Time to rob by bee species and treatment",
     x = NULL,
     y = "Time to Rob"
   ) +
@@ -270,16 +272,18 @@ timetorob_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, pla
   scale_shape_manual(name = "Treatment", values = c(16, 17), guide = "none") +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 40)) +
   labs(
-    title = "Time to rob by bee species and treatment",
+    #title = "Time to rob by bee species and treatment",
     x = NULL,
     y = "Time to Rob"
   ) +
   theme_minimal() +
   theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
     axis.line = element_line(color = "black"),
     axis.line.x = element_line(),
-    axis.line.y = element_line()
-  )
+    axis.line.y = element_line(),
+    )
 
 timetorob <- timetorob_box_species +
   coord_cartesian(ylim = c(0, 40))
@@ -617,3 +621,37 @@ ggplot(summary_data_coryflav, aes(x = "", y = total_visits, fill = trytolegit_gt
   theme(axis.text.x=element_blank())  # Hide x-axis label
 ```
  
+```{r}
+library(patchwork)
+library(cowplot)
+
+blank_plot <- ggplot()+
+  theme_void()+
+  theme(panel.background = element_rect(fill = "white", color = NA))
+
+timetorob_legend <- timetorob + theme(legend.position = "none")
+plot_legend <- plot + theme(legend.position = "none")
+
+combined_plot <- (blank_plot | plot_legend) / timetorob_legend + 
+plot_layout(widths = c(1,9), heights = c(1,1))+
+  plot_annotation(tag_levels = "A")
+
+# Extract legend from plot1
+legend <- cowplot::get_legend(
+  plot + theme(legend.position = "right")
+)
+
+# Use cowplot to assemble final plot with legend below
+
+final_plot <- cowplot::plot_grid(
+  combined_plot,
+  legend,
+  ncol = 1,
+  rel_heights = c(1, 0.1)
+)
+
+final_plot
+
+ggsave("results/combined_plot.pdf", final_plot, width = 7, height = 8, units = "in")
+
+```
