@@ -1,0 +1,204 @@
+---
+title: "Analysis_NectarVials_RobberBehavior_Jan2026"
+author: "Valerie Martin"
+date: "2026-01-06"
+output: html_document
+---
+
+
+```{r, setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/Users/valeriemartin/Desktop/Desktop - Valerie’s MacBook Pro/RMBL_Volatiles")
+```
+
+Load data and packages
+```{r}
+library(dplyr)
+library(phyloseq)
+library(ggplot2)
+library(doParallel)
+library(vegan)
+library(DESeq2)
+library(microViz)
+library(stringr)
+library(ggord)
+library(tidyr)
+library(ggforce)
+library(ggsignif)
+library(randomForest)
+library(kableExtra)
+
+`%ni%` = Negate(`%in%`)
+
+data.list <- read.csv("Data/Processing Data/NectarVials2023_RobberBehaviorMs_DataList.csv")
+data.list <- data.list[,-1]
+metadata <- read.csv("Data/Input Data/NectarVials2023_RobberBehaviorMs_Metadata.csv")
+```
+
+Check out the processed data
+```{r}
+metadata.controls <- metadata %>% filter(Class=="Strl" | Class=="Blank")
+metadata.samples <- metadata %>% filter(Class=="Isolate") 
+
+# Look at which compounds are at least 20x more abundant in the fermented nectar samples compared to the sterile nectar controls and empty vial blank
+ctr <- which(names(data.list) %in% metadata.controls$GC_Sample_ID)
+flwr <- which(names(data.list) %in% metadata.samples$GC_Sample_ID)
+meanComp <- data.frame()
+for (i in 1:nrow(data.list)) {
+  meanComp[i,1] <- mean(colMeans(data.list[i,ctr]))
+  meanComp[i,2] <- mean(colMeans(data.list[i,flwr]))
+  meanComp[i,3] <- meanComp[i,2]/meanComp[i,1]
+  meanComp[i,4] <- ifelse(meanComp[i,3]>20, TRUE, FALSE)
+  meanComp[i,5] <- data.list[i,1]
+}
+meanComp.true <- meanComp[which(meanComp$V4==TRUE),]
+data.list.cleaned <- data.list[which(data.list$AlignID %in% meanComp.true$V5),]
+data.list.cleaned$RatioToAmbient <- meanComp.true$V3
+
+#save(data.list.cleaned, file="NectarVials_DataList_RobberPaper_Jan2026.rda")
+```
+
+Remove known contaminants by name - one removed
+```{r}
+# Remove known junk (siloxane, silane, or TMS derivative in multiple top 3 hits)
+data.list.cleaned <- data.list.cleaned %>%
+  mutate(silox1 = rowSums(
+  sapply(select(., Name.1),
+         function(x) grepl("silox|silan|silyl|Argon|TMS|Caprolactam|Toluene", x, ignore.case = TRUE)
+  )) > 0
+)
+data.list.cleaned <- data.list.cleaned %>%
+  mutate(silox2 = rowSums(
+  sapply(select(., Name.2),
+         function(x) grepl("silox|silan|silyl|Argon|TMS|Caprolactam|Toluene", x, ignore.case = TRUE)
+  )) > 0
+)
+data.list.cleaned <- data.list.cleaned %>%
+  mutate(silox3 = rowSums(
+  sapply(select(., Name.3),
+         function(x) grepl("silox|silan|silyl|Argon|TMS|Caprolactam|Toluene", x, ignore.case = TRUE)
+  )) > 0
+)
+
+data.list.cleaned <- data.list.cleaned %>% filter(silox1 !=TRUE | silox2 !=TRUE | silox3 !=TRUE)
+```
+
+RI calculation 
+```{r}
+#load("NectarVials_DataList_RobberPaper_Jan2026.rda")
+
+# Add retention indices
+alkanes <- read.csv("Data/Input Data/Alkane_RTs.csv")
+data.list.cleaned$RI <- NA
+for (i in 1:nrow(data.list.cleaned)){
+  position<-sum(alkanes$RT<data.list.cleaned$tmean[i])+1
+  n0<-alkanes$N_C[position-1]
+  n1<-alkanes$N_C[position]
+  RTn0<-alkanes$RT[position-1]
+  RTn1<-alkanes$RT[position]
+  RI<- 100*n0 + 100*(data.list.cleaned$tmean[i] -RTn0)/(RTn1 - RTn0)
+  ifelse(length(RI) == 0, data.list.cleaned$RI[i]<-NA, data.list.cleaned$RI[i]<-RI)
+}
+```
+
+Only retain compounds that were found in both Mreu samples
+```{r}
+# Mreu replicate columns
+mreu_cols <- c("Cory_Mreu_Rep1_6262023_32",
+               "Cory_Mreu_Rep2_6262023_33")
+
+# ensure numeric
+data.list.cleaned[mreu_cols] <- lapply(data.list.cleaned[mreu_cols], as.numeric)
+
+# keep compounds present in both Star reps
+mreu.shared <- data.list.cleaned[
+  data.list.cleaned[[mreu_cols[1]]] > 0 &
+  data.list.cleaned[[mreu_cols[2]]] > 0, ]
+
+# compound names
+mreu.shared$Name.1
+```
+
+Combine duplicates. Doing this manually because there is only one set of duplicates (phenylethyl alcohol). 
+```{r}
+data.list.cleaned <- mreu.shared
+peakAreas <- data.list.cleaned[,54:58]
+peakAreas[11,] <- colSums(peakAreas[11:13,])
+
+data.list.cleaned[11,54:58] <- peakAreas[11,]
+data.list.cleaned <- data.list.cleaned[-12,]
+data.list.cleaned <- data.list.cleaned[-12,]
+
+peakAreas[14,] <- colSums(peakAreas[14:15,])
+data.list.cleaned[14,54:58] <- peakAreas[14,]
+data.list.cleaned <- data.list.cleaned[-15,]
+
+# Removing two compounds with low peak areas (< 25,000 total ion count)
+data.list.cleaned <- data.list.cleaned[-12,]
+data.list.cleaned <- data.list.cleaned[-12,]
+```
+
+Check box plots of filtered compounds to make sure the contaminant filters worked - All look good. 14 compounds in the final cleaned dataset.
+```{r}
+data.list.cleaned.info <- data.list.cleaned %>% select(AlignID:Formula.10, RatioToAmbient, RI)
+
+abund.long <- pivot_longer(data.list.cleaned, cols=Cory_Mreu_Rep1_6262023_32:VialBlank_6262023_31, names_to = "Sample_ID", values_to="Peak_Area")
+
+abund.long.meta <- merge(abund.long, metadata, by.x="Sample_ID", by.y="GC_Sample_ID")
+abund.long.meta$Peak_Area <- as.numeric(abund.long.meta$Peak_Area)
+abund.long.meta$Name.1 <- as.factor(abund.long.meta$Name.1)
+
+ggplot(abund.long.meta, aes(x = Class, y = Peak_Area)) +
+  geom_jitter() + # using `ggsignif` to display comparison of interest
+  facet_wrap_paginate(~AlignID, ncol=5, nrow=5, scales="free", page=1) 
+
+data.list.cleaned <- data.list.cleaned[-19,]
+
+#save(data.list.cleaned, file="NectarVials_eRah_dataList_cleaned_noDups_09Jan2026.rda")
+#write.csv(data.list.cleaned, "NectarVials_eRah_dataList_cleaned_noDups_09Jan2026.csv")
+```
+
+Setting up the phyloseq object
+```{r}
+load("~/Desktop/Desktop - Valerie’s MacBook Pro/RMBL_Volatiles/NectarVials_eRah_dataList_cleaned_noDups_28May2025.rda")
+
+# Set up phyloseq object
+row.names(data.list.cleaned) <- data.list.cleaned$AlignID
+# Peak ID data
+peakIDs <- data.list.cleaned %>% select(tmean:RI)
+#peakIDs <- data.list.cleaned %>% select(tmean:KnownYeast)
+TAX <- tax_table(peakIDs)
+taxa_names(TAX) <- row.names(data.list.cleaned) 
+
+# Compound abundances
+peaksOnly <- data.list.cleaned[,54:58]
+#peaksOnly <- data.list.cleaned %>% select(!(AlignID:KnownYeast))
+OTU <- otu_table(peaksOnly, taxa_are_rows = TRUE)
+
+# Sample metadata
+metadata <- metadata %>% filter(ForBeePaper1=="Yes")
+rownames(metadata) <- metadata$GC_Sample_ID
+SAMP <- sample_data(metadata)
+
+NV.phylo <- phyloseq(OTU, SAMP, TAX)
+#save(NV.phylo, file="NectarVials_CoryMreuOnly_phyloseq.rda")
+```
+
+Visualize ambient controls vs. Mreu-fermented nectar samples 
+```{r}
+load("~/Desktop/Desktop - Valerie’s MacBook Pro/RMBL_Volatiles/NectarVials_CoryMreuOnly_phyloseq.rda")
+# NMDS with veg and fermented nectar samples
+NMDSord <- ordinate(NV.phylo, method = "NMDS", distance = "bray")
+
+df.ord <- plot_ordination(NV.phylo, NMDSord, color  = "Class", justDF=TRUE)
+p <- plot_ordination(NV.phylo, NMDSord, color  = "Class") +
+  stat_ellipse(type="t")+
+  theme_bw()+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  theme(text = element_text(size=16))+
+  geom_point(size=5)+
+  scale_color_manual(values=c("gold2", "green3","orchid", "grey"))+
+  theme(legend.position = 'left')+
+  theme(aspect.ratio = 0.8) +
+  labs(title="NMDS of Linaria Vegetative Controls and Floral Scent Samples")
+p 
+```
