@@ -29,6 +29,9 @@ library('multcomp')
 library('lme4')
 library('lmerTest')
 library('gridExtra')
+library('lme4')
+library('DHARMa')
+library('emmeans')
 #library('ggpub')
 visitation<-read.csv("data/bumblebee_behavior_data.csv", header = T)
 ```
@@ -153,6 +156,68 @@ t_test_summary <- t_test_summary %>%
 print(t_test_summary)
 ```
 
+```{r probability of mreu choice}
+
+
+visit_choices <- robbed_flowers %>%
+  group_by(sample, species, plantsp) %>%
+  summarise(
+    mreu_visits = sum(treatment == "mreu"),
+    control_visits = sum(treatment == "control"),
+    .groups = "drop"
+  )
+
+m_choice <- glmer(
+  cbind(mreu_visits, control_visits) ~ plantsp * species + (1 | sample),
+  data = visit_choices,
+  family = binomial
+)
+
+summary(m_choice)
+
+emm_choice <- emmeans(m_choice, ~ plantsp * species, type = "response")
+emm_choice
+
+
+emm_choice_df <- as.data.frame(emm_choice)
+
+ggplot(emm_choice_df, aes(x = interaction(species, plantsp),
+                          y = prob, ymin = asymp.LCL, ymax = asymp.UCL)) +
+  geom_pointrange(color = "gray20", size = 1.2) +
+  coord_cartesian(ylim = c(0,1)) +
+  labs(x = NULL, y = "Probability of choosing yeast") +
+  theme_minimal(base_size = 14) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"))
+
+test(emm_choice, null = 0.5)
+
+
+# visits per bout
+visits_per_bout <- robbed_flowers %>%
+  group_by(sample) %>%
+  summarise(total_visits = n(), .groups = "drop")
+
+# mean ± SE across all bouts
+mean_visits <- mean(visits_per_bout$total_visits)
+se_visits <- sd(visits_per_bout$total_visits) / sqrt(nrow(visits_per_bout))
+
+# visits per bout
+visits_per_bout <- robbed_flowers %>%
+  group_by(sample) %>%
+  summarise(total_visits = n(), .groups = "drop")
+
+# mean ± SE across all bouts
+mean_visits <- mean(visits_per_bout$total_visits)
+se_visits <- sd(visits_per_bout$total_visits) / sqrt(nrow(visits_per_bout))
+
+cat("Mean number of flower visits per bout =",
+    round(mean_visits, 2), "±", round(se_visits, 2), "SE\n")
+
+
+```
+
 ```{r}
 
 # Create a histogram
@@ -183,6 +248,7 @@ plot
 ggsave("results/bee_visits_histogram.pdf", plot = plot, width = 8, height = 6)
 
 ```
+
 ```{r}
 
 summary_df <- robbed_flowers %>%
@@ -236,6 +302,47 @@ mean_se <- function(x) {
   se <- sd(x, na.rm = TRUE) / sqrt(length(na.omit(x)))
   return(paste0(round(m, 2), " ± ", round(se, 2)))
 }
+
+timetorob_box_species <- ggplot(
+  robbed_flowers, 
+  aes(x = interaction(species, plantsp), y = timetorob, fill = treatment)
+) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(width = 0.75)) + 
+  geom_point(
+    position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75),
+    aes(shape = treatment, fill = treatment),   # use fill, not color
+    size = 2,
+    stroke = 0.4,       # thin outline
+    color = "black",    # outline color
+    alpha = 0.75
+  ) +
+  stat_summary(
+    fun.data = function(x) {
+      m <- mean(x)
+      se <- sd(x) / sqrt(length(x))
+      data.frame(y = m + se * -1.5, label = sprintf("%.2f ± %.2f", m, se))
+    },
+    geom = "text",
+    position = position_dodge(width = 0.75),
+    size = 3,
+    vjust = 0,
+    color = "black"
+  ) +
+  scale_fill_manual(
+    values = c("mreu" = "#4169E1",
+               "control" = "#FAFAD2")
+  ) +
+  labs(x = NULL, y = "Time to Rob") +
+  scale_shape_manual(name = "Treatment", values = c(21, 22), guide = "none") + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 40)) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(color = "black")
+  )
+
+timetorob_box_species
 
 timetorob_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, plantsp), y = timetorob, fill = treatment)) +
   geom_boxplot(outlier.shape = NA, position = position_dodge(width = 0.75)) + 
@@ -296,11 +403,223 @@ ggsave("results/timetorob_pub.pdf", plot = timetorob, width = 8, height = 6)
 ANOVA  time to rob on bee species (1) and plant species (2) - in both cases treatment is highly significant, but interaction between either plant or bee species and treatment is not. Suggests instead that only the nectar treatment significantly different
 
 ```{r ANOVA}
+
 anova_result <- aov(timetorob ~ species + treatment, data = robbed_flowers)
 summary(anova_result) 
 
 anova_result_plant <- aov(timetorob ~ plantsp + treatment, data = robbed_flowers)
 summary(anova_result_plant) 
+```
+
+```{r GLMMs Time to Rob}
+
+eps <- 0.01
+m_rob <- lmer (log(timetorob+eps) ~ treatment + (1| sample) + (1| plantsp) + (1| flower.) + (1| species), data = robbed_flowers)
+summary(m_rob)
+
+
+res <- simulateResiduals(m_rob, n = 1000)
+plot(res)                 # full diagnostic plot
+testUniformity(res)       # residuals should be uniform
+testDispersion(res)       # checks for over/under dispersion
+testResiduals(res)        # KS test for uniformity
+
+m_simpler <- lmer(log(timetorob + eps) ~ treatment + 
+                  (1|sample) + (1|flower.),
+                  data = robbed_flowers)
+
+anova(m_simpler, m_rob)  # compare fits with likelihood ratio test
+
+m_final <- lmer(log(timetorob + eps) ~ treatment + plantsp + species +
+                (1|sample) + (1|flower.),
+                data = robbed_flowers)
+
+summary(m_final)
+
+emm <- emmeans(m_final, ~ treatment)
+regrid(emm, transform = "response")
+
+emm_full <- emmeans(m_final, ~treatment | plantsp * species)
+
+emm_full <- emmeans(m_final, ~ treatment | plantsp * species,
+                    at = list(plantsp = unique(robbed_flowers$plantsp),
+                              species = unique(robbed_flowers$species)))
+regrid(emm_full, transform = "response")
+
+
+# 1) Fit a model that includes species
+m_full <- lmer(
+  log(timetorob + eps) ~ treatment + plantsp + species +
+    (1|sample) + (1|flower.),
+  data = robbed_flowers
+)
+
+# 2) Estimated means by treatment within plantsp x species
+emm_full <- emmeans(m_full, ~ treatment | plantsp * species)
+
+# 3) Back transform to seconds, then coerce to a data frame
+emm_df <- as.data.frame(regrid(emm_full, transform = "response"))
+
+# 4) Keep only combos that actually exist in your data
+obs <- robbed_flowers %>% distinct(plantsp, species)
+emm_df_obs <- emm_df %>% semi_join(obs, by = c("plantsp","species"))
+
+emm_df_obs
+
+
+
+# 1) Make a readable x group for both raw and emmeans
+robbed_flowers <- robbed_flowers %>%
+  mutate(group = interaction(species, plantsp, sep = " × "))
+
+# 2) Get emmeans by treatment within plant × bee, back to seconds, keep only observed combos
+emm_full <- emmeans(m_full, ~ treatment | plantsp * species)
+emm_df <- as.data.frame(regrid(emm_full, transform = "response"))
+
+obs <- robbed_flowers %>% distinct(plantsp, species)
+emm_df_obs <- emm_df %>%
+  inner_join(obs, by = c("plantsp","species")) %>%
+  mutate(group = interaction(species, plantsp, sep = " × "))
+
+pd <- position_dodge(width = 0.75)
+
+timetorob_emm <- ggplot(robbed_flowers,
+                        aes(x = group, y = timetorob, fill = treatment)) +
+  geom_boxplot(outlier.shape = NA, position = pd) +
+  geom_point(aes(fill = treatment, shape = treatment),
+             position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75),
+             size = 2, alpha = 0.9, color = "black", stroke = 0.4) +
+  geom_pointrange(data = emm_df_obs,
+                  aes(x = group, y = response, ymin = lower.CL, ymax = upper.CL,
+                      group = treatment),     # key line
+                  position = pd,             # same dodge as boxplot
+                  shape = 21, fill = "gray", color = "black",
+                  stroke = 0.5, alpha = 0.9,
+                  size = 2, linewidth = 0.8) +
+  scale_fill_manual(values = c("mreu" = "#4169E1", "control" = "#EEDD82")) +
+  scale_shape_manual(values = c("control" = 21, "mreu" = 22), guide = "none") +
+  coord_cartesian(ylim = c(0, 40)) +
+  labs(x = NULL, y = "Time to rob (s)") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"))
+
+timetorob_emm
+
+
+```
+
+```{r}
+m_feed <- lmer (log(timefeeding+eps) ~ treatment + (1| sample) + (1| plantsp) + (1| flower.) + (1| species), data = robbed_flowers)
+summary(m_feed)
+
+res_feed <- simulateResiduals(m_feed, n = 1000)
+plot(res_feed)                 # full diagnostic plot
+testUniformity(res_feed)       # residuals should be uniform
+testDispersion(res_feed)       # checks for over/under dispersion
+testResiduals(res_feed)        # KS test for uniformity
+
+m_simple_feed <- lmer(log(timefeeding + eps) ~ treatment + 
+                  (1|sample) + (1|flower.),
+                  data = robbed_flowers)
+
+anova(m_simple_feed, m_feed)  # compare fits with likelihood ratio test
+
+m_final_feed <- lmer(log(timefeeding + eps) ~ treatment + plantsp + species +
+                (1|sample) + (1|flower.),
+                data = robbed_flowers)
+
+summary(m_final_feed)
+
+# 2) Estimated means by treatment within plantsp x species
+emm_full_feed <- emmeans(m_final_feed, ~ treatment | plantsp * species)
+
+# 3) Back transform to seconds, then coerce to a data frame
+emm_df_feed <- as.data.frame(regrid(emm_full_feed, transform = "response"))
+
+# 4) Keep only combos that actually exist in your data
+obs_feed <- robbed_flowers %>% distinct(plantsp, species)
+emm_df_obs_feed <- emm_df_feed %>% semi_join(obs_feed, by = c("plantsp","species"))%>% mutate(group = interaction(species, plantsp, sep = " × "))
+
+emm_df_obs_feed
+
+pd <- position_dodge(width = 0.75)
+
+timefeeding_emm <- ggplot(robbed_flowers,
+                          aes(x = group, y = timefeeding, fill = treatment)) +
+  geom_boxplot(outlier.shape = NA, position = pd) +
+
+  # jittered datapoints with black outlines
+  geom_point(
+    aes(fill = treatment, shape = treatment),
+    position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75),
+    size = 2, alpha = 0.9,
+    color = "black",      # outline
+    stroke = 0.4
+  ) +
+
+  # emmeans layer: gray filled points with black outline, aligned by treatment
+  geom_pointrange(
+    data = emm_df_obs_feed,
+    aes(x = group, y = response, ymin = lower.CL, ymax = upper.CL,
+        group = treatment),
+    position = pd,
+    shape = 21,           # filled circle allows fill and outline
+    fill = "gray",
+    color = "black",      # outline and CI line
+    stroke = 0.5,
+    alpha = 0.9,
+    size = 2,
+    linewidth = 0.8
+  ) +
+
+  scale_fill_manual(values = c("mreu" = "#4169E1", "control" = "#EEDD82")) +
+  scale_shape_manual(values = c("control" = 21, "mreu" = 22), guide = "none") +
+
+  coord_cartesian(ylim = c(0, 40)) +
+  labs(x = NULL, y = "Time feeding (s)") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"))
+
+timefeeding_emm
+
+# 3) Plot: raw boxplot + jitter + emmeans point with 95% CI
+pd <- position_dodge(width = 0.75)
+
+timefeeding_emm <- ggplot(robbed_flowers,
+                        aes(x = group, y = timefeeding, fill = treatment)) +
+  geom_boxplot(outlier.shape = NA, position = pd) +
+  geom_point(aes(color = treatment, shape = treatment),
+             position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75),
+             size = 1, alpha = 0.9) +
+  
+  # emmeans layer: big gray points + thick CI lines
+  geom_pointrange(data = emm_df_obs_feed,
+                  aes(x = group, y = response, ymin = lower.CL, ymax = upper.CL),
+                  color = "gray",
+                  alpha = 0.7, 
+                  position = pd, 
+                  size = 1,          # bigger point
+                  linewidth = 1) +     # thicker CI lines
+  
+  scale_fill_manual(values = c("mreu" = "#4169E1", "control" = "#EEDD82")) +
+  scale_color_manual(values = c("mreu" = "#4169E1", "control" = "#EEDD82")) +
+  scale_shape_manual(values = c("control" = 16, "mreu" = 17), guide = "none") +
+  
+  coord_cartesian(ylim = c(0, 40)) +
+  labs(x = NULL, y = "Time to rob (s)") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"))
+
+timefeeding_emm
+
+
+
 ```
 
 To make sure this significance holds, I did wilcox test only on the mean time to rob. Again, significantly different (p = < 0.05)
@@ -441,6 +760,15 @@ chisq.test(table(y_tube$Initial_Choice))
  
 t <- t.test(y_tube$Yeast_time, y_tube$Control_time, paired = TRUE, alternative = "greater") 
 t
+
+chisq <- chisq.test(table(y_tube$Initial_Choice))
+phi <- sqrt(chisq$statistic / sum(chisq$observed))
+phi
+
+library(effsize)
+cohen_d <- cohen.d(y_tube$Yeast_time, y_tube$Control_time, paired = TRUE, hedges.correction = TRUE)
+cohen_d
+
 ```
 
 ```{r}
