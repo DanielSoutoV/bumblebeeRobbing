@@ -636,7 +636,7 @@ print(wilcox_test_result) #wilcox result - highly significant difference of mean
 
 ```
 
-We do the same analysis for feedint time and show that there is no significant difference between treatments on the feeding time of bees. It seems that yeast does not have a significant flavor(?) difference or not not different enough or nasty enough for bees to care. They spend the same amount of time feeding on sterile or yeast innoculated nectar
+We do the same analysis for feeding time and show that there is no significant difference between treatments on the feeding time of bees. It seems that yeast does not have a significant flavor(?) difference or not not different enough or nasty enough for bees to care. They spend the same amount of time feeding on sterile or yeast inoculated nectar
 
 ```{r feeding time}
 feedingtime_box_species <- ggplot(robbed_flowers, aes(x = interaction(species, plantsp), y = timefeeding, fill = treatment)) +
